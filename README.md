@@ -51,3 +51,11 @@ lua folder_architecture_generator.lua my_project example.md
     ║   ╚══ [...example files]
     ╚══ [...config file]
 ```
+
+### Project under development
+
+- [x] Create a folder architecture generator
+- [x] Create a file architecture generator
+- [x] Create a config file
+- [x] Create a config file generator
+- [ ] Create a style guide generator 🚨🚨
