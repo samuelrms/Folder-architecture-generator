@@ -59,3 +59,6 @@ lua folder_architecture_generator.lua my_project example.md
     ║   ╚══ [...example files]
     ╚══ [...config file]
 ```
+
+![image](https://github.com/samuelrms/Folder-architecture-generator/assets/92615688/638a2e69-0961-40a0-87e2-12f2765c8943)
+
