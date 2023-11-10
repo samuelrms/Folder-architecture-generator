@@ -1,6 +1,21 @@
+local excludedPatterns = require('excludePaths')
+
+local function isExcluded(filename)
+  for _, pattern in ipairs(excludedPatterns) do
+    if filename:match(pattern) then
+      return true
+    end
+  end
+  return false
+end
+
 local function listItemsInPath(path, rootLength)
   local list = {}
-  local pfile = io.popen('find "' .. path .. '" -type f')
+  local excludedPatternsString = table.concat(excludedPatterns, '|')
+  local pfile = io.popen(string.format(
+    'find "%s" -type f -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.next/*" | grep -E -v "%s"',
+    path, excludedPatternsString))
+
   if not pfile then
     return list
   end
@@ -9,11 +24,14 @@ local function listItemsInPath(path, rootLength)
     for part in filename:sub(rootLength + 2):gmatch('[^/]+') do
       table.insert(parts, part)
     end
-    table.insert(list, parts)
+    if not isExcluded(parts[#parts]) then
+      table.insert(list, parts)
+    end
   end
   pfile:close()
   return list
 end
+
 
 local function generateTreeStructure(items)
   local tree = {}
@@ -51,33 +69,38 @@ local rootLength = #root
 -- Create tree .md
 local file = io.open(root .. '/' .. (fileName or 'readme.md'), 'a+') -- Open file in write mode (create if not exists)
 
--- List items in path "src" and "public" and write to readme.md
-local patterns = { "src", "public" }
 if not file then
   print('Error: Could not open file readme.md')
   os.exit(1)
 end
+
 file:write('    .' .. '\n')
-for _, pattern in ipairs(patterns) do
-  local content = listItemsInPath(root .. '/' .. pattern .. '/', rootLength)
-  if #content > 0 then
-    local tree = generateTreeStructure(content)
-    local function printTree(currentNode, indent)
-      -- print(indent .. '*')
+local content = listItemsInPath(root, rootLength)
+if #content > 0 then
+  local tree = generateTreeStructure(content)
+  local function printTree(currentNode, indent)
+    if type(currentNode) == "table" then
+      local count = 0
+      local total = 0
+      for _, _ in pairs(currentNode) do
+        total = total + 1
+      end
       for part, node in pairs(currentNode) do
-        if node.isFile then
-          file:write(indent .. '     ╚══ ' .. part .. '\n')
-        else
-          file:write(indent .. '    ╚══ ' .. part .. '\n')
-          printTree(node, indent .. '    ║ ')
+        count = count + 1
+        local newIndent = indent .. '    ║'
+        local linePrefix = count == total and '    ╚══ ' or '    ╠══ '
+        local lineSuffix = count == total and '' or (node.isFile and '' or '/')
+        local connector = count == total and '' or (linePrefix == '    ╠══ ' and '  ' or '║')
+        if part ~= 'isFile' then
+          file:write(indent .. linePrefix .. part .. lineSuffix .. (lineSuffix == '/' and '' or connector) .. '\n')
+          printTree(node, newIndent)
         end
       end
-      -- print(indent .. '*')
+      -- Handling case where a file is marked as the last one
     end
-    printTree(tree, '')
   end
+  printTree(tree, '')
 end
-file:write('	╚══ [...config file]')
 
 
 -- Close file
