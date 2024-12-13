@@ -13,7 +13,7 @@ local function listItemsInPath(path, rootLength)
   local list = {}
   local excludedPatternsString = table.concat(excludedPatterns, '|')
   local pfile = io.popen(string.format(
-    'find "%s" -type f -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.next/*" | grep -E -v "%s"',
+    'find "%s" -type f -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/.next/*" -not -path "*/.vscode/*" -not -path "*/out/*" | grep -E -v "%s"',
     path, excludedPatternsString))
 
   if not pfile then
